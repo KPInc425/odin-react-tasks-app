@@ -8,7 +8,7 @@ function Overview({ tasks, deleteTask }) {
                 return (
                     <div key={ task.id } data-task-id={ task.id }>
                         <p style={{ display: "inline-block", paddingRight: 10}}> { index + 1} { task.text } </p>
-                        <button key={ index }  onClick={ deleteTask }> Delete </button>
+                        <button key={ index }  onClick={ deleteTask } style={{ border: "none", background: "none", padding: 0, zIndex: 2}} className="fa-solid fa-trash-can"> </button>
                     </div>
                 )
             })

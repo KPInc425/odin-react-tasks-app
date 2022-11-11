@@ -55,9 +55,9 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <form action="submit" onSubmit={ this.addTask }>
+        <form action="submit" onSubmit={ this.addTask } style={{ display: "flex"}}>
           <input type="text" id='taskInput' onChange={ this.handleNameChange } value={ this.state.taskInput.text } placeholder="Enter task here..."></input>
-          <button type='submit'>Add Task</button>
+          <button type='submit' style={{ border: "none", background: "none", padding: 0, zIndex: 2}} ><i className="fa-solid fa-square-plus fa-2x" /></button>
         </form>
         <Overview tasks={ this.state.taskArray } deleteTask={ this.deleteClickedTask }/>
         <h2>Total Tasks</h2>
