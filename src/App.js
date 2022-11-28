@@ -1,91 +1,235 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import Overview from './components/Overview';
 import uniqid from "uniqid";
+import './App.css'
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { 
+  getFirestore,
+  collection, 
+  addDoc,
+  getDocs, 
+  serverTimestamp,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+  getDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+} from 'firebase/firestore';
+import {
+  getAuth, 
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+} from 'firebase/auth';
+import { getPerformance } from 'firebase/performance';
+
+import { getFirebaseConfig } from './firebase-config';
+// import { getFirebaseConfig } from './firebase-config.js';
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = getFirebaseConfig();
+
+const App = () => {
+  const [taskArray, setTaskArray] = useState([]);
+  const [taskInput, setTaskInput] = useState({
+                                              text: "", 
+                                              id: uniqid(),
+                                              editState: false,
+                                            });
+  const [editInput, setEditInput] = useState("");
+  const [userId, setUserId] = useState(0);
+
+  useEffect(() => {
+    // console.log("useEffect called!");
+    initFirebaseAuth();
+    // console.log(isUserSignedIn());
+  }, [])
+
+  // Initiate firebase auth
+const initFirebaseAuth = () => {
+  onAuthStateChanged(getAuth(), authStateObserver)
+}
+
+//refactor this for React
+const authStateObserver = (user) => {
+  console.log(user);
+  let userPicElement = document.getElementById('userPic');
+  let userNameElement = document.getElementById('userName');
+  let signOutButtonElement = document.getElementById('signOut');
+  let signInButtonElement = document.getElementById('signIn');
+  if (user) {
+    // user is signed in!
+    // get the signed-in user's profile pic and name
+    let profilePicUrl = getProfilePicUrl();
+    let userName = getUserName();
+
+    // Set the user's profile pic and name
+
+    // console.log(userPicElement);
+
+    userPicElement.style.backgroundImage = 
+      'url(' + addSizeToGoogleProfilePic(profilePicUrl) + ')';
+    userNameElement.textContent = userName;
+
+    // Show user's profile and sign-out button 
+    userNameElement.removeAttribute('hidden');
+    userPicElement.removeAttribute('hidden');
+    signOutButtonElement.removeAttribute('hidden');
+
+    // Hide sign-in button 
+    signInButtonElement.setAttribute('hidden', 'true');
+    console.log(user.uid);
+    setUserId(user.uid);
 
 
-class App extends Component {
-  constructor() {
-    super();
+    // loads all tasks after sign in
+    loadDBTasks(user.uid);
+  } else {
+    // user is signed out!
+    // Hide user's profile and sign-out button
+    userNameElement.setAttribute('hidden', 'true');
+    console.log(userPicElement);
+    userPicElement.setAttribute('hidden', 'true');
+    userPicElement.removeAttribute('style');
+    signOutButtonElement.setAttribute('hidden', 'true');
 
-    this.state = {
-      taskArray: [],
-      taskInput: {
-        text: "", 
-        id: uniqid(),
-        editState: false,
-      },
-      editInput: "",
-      tasksTotal: 0,
-    };
+    // Show sign-in button
 
-    // this.addTask = this.addTask.bind(this);
-    // this.deleteClickedTask = this.deleteClickedTask.bind(this);
-    // this.makeTaskEditable = this.makeTaskEditable.bind(this);
+    signInButtonElement.removeAttribute('hidden');
+
+    // Removes all tasks from view
+    setTaskArray([]);
+    // setUserId(0);
   }
+}
 
+// signs into task app
+const signIn = async () => {
+  const provider = new GoogleAuthProvider();
+  await signInWithPopup(getAuth(), provider);
+}
 
-  addTask = (e) => {
+// signs out of task app
+const signOutUser = () => {
+  // sign out of firebase
+  signOut(getAuth());
+}
+
+const getProfilePicUrl = () => {
+  return getAuth().currentUser.photoURL || `${process.env.PUBLIC_URL}/logo192.png`;
+}
+
+const getUserName = () => {
+  return getAuth().currentUser.displayName;
+}
+
+const isUserSignedIn = () => {
+  console.log(getAuth().currentUser);
+  return !!getAuth().currentUser;
+}
+
+const saveTask = async (task) => {
+  // add a new task entry to firebase database
+  try {
+    let newTaskData = {
+      text: task.text, 
+      id: task.id,
+      timestamp: serverTimestamp(),
+    }
+    const newDocRef = doc(getFirestore(), userId, task.id);
+    await setDoc(newDocRef, newTaskData);
+  }
+  catch (error) {
+    console.error('Error writing new task to Firebase Database', error);
+  }
+}
+
+const deleteTaskByID = async (id) => {
+  const taskDocRef = doc(getFirestore(), userId, id);
+  await deleteDoc(taskDocRef);
+
+  console.log(id);
+  return id;
+}
+
+// Adds a size to Google Profile pics URLs.
+function addSizeToGoogleProfilePic(url) {
+  if (url.indexOf('googleusercontent.com') !== -1 && url.indexOf('?') === -1) {
+    return url + '?sz=150';
+  }
+  return url;
+}
+
+  const addTask = (e) => {
     e.preventDefault();
-    this.setState({
-      // taskArray: [...this.state.taskArray, this.state.taskInput],
-      taskArray: this.state.taskArray.concat(this.state.taskInput),
-      taskInput: {
+    if (isUserSignedIn()) {
+      saveTask(taskInput);
+      setTaskInput({
         text: "",
         id: uniqid(),
         editState: false,
-      },
-      tasksTotal: this.state.tasksTotal + 1,
-    })
+      });
+      loadDBTasks(userId);
+    } else {
+      alert("You can't do that if not signed in!")
+    }
+
   }
 
-  handleNameChange = (e) => {
-    this.setState({
-      taskInput: { 
-        text: e.target.value,
-        id: this.state.taskInput.id,
-        editState: this.state.taskInput.editState
-      },
-    })
+  const handleNameChange = (e) => {
+    setTaskInput({ 
+      text: e.target.value,
+      id: taskInput.id,
+      editState: taskInput.editState
+    });
   }
 
-  handleEditChange = (e) => {
+  const handleEditChange = (e) => {
     console.log(e.target.value);
-    this.setState({
-      editInput: e.target.value
-    })
+    setEditInput(e.target.value)
   }
 
-  deleteClickedTask = (e) => {
-    // console.log(e.target.parentNode.getAttribute("data-task-id"));
-    const clickedTaskID = e.target.parentNode.getAttribute("data-task-id");
-    this.setState({
-      taskArray: this.state.taskArray.filter((task) => task.id !== clickedTaskID),
-      tasksTotal: this.state.tasksTotal - 1,
-    })
+  const deleteClickedTask = (e) => {
+    if (isUserSignedIn()) {
+      const clickedTaskID = e.target.parentNode.getAttribute("data-task-id");
+      deleteTaskByID(clickedTaskID);
+      setTaskArray(taskArray.filter((task) => task.id !== clickedTaskID));
+    } else {
+      alert("You must be signed it to do that!")
+    }
+
+
   }
 
-  makeTaskEditable = (e) => {
-    // console.log(e.target.parentNode.getAttribute("data-task-id"));
-    const clickedTaskID = e.target.parentNode.getAttribute("data-task-id");
-    
-    
-    let tmpArray = [].concat(this.state.taskArray);
-    console.log(tmpArray);
-    // Reset editState for other tasks that may be selected
-    tmpArray = this.resetEditStates(tmpArray);
-    console.log(tmpArray);
-    const oldTask = this.findTask(clickedTaskID);
-    const taskIndex = this.findIndex(clickedTaskID);
-    const editableTask = {...oldTask, editState: !oldTask.editState};
-    tmpArray[taskIndex] = editableTask;
+  const makeTaskEditable = (e) => {
+    if (isUserSignedIn()) {
+      // console.log(e.target.parentNode.getAttribute("data-task-id"));
+      const clickedTaskID = e.target.parentNode.getAttribute("data-task-id");
+      let tmpArray = [].concat(taskArray);
+      console.log(tmpArray);
+      // Reset editState for other tasks that may be selected
+      tmpArray = resetEditStates(tmpArray);
+      console.log(tmpArray);
+      const oldTask = findTask(clickedTaskID);
+      const taskIndex = findIndex(clickedTaskID);
+      const editableTask = {...oldTask, editState: !oldTask.editState};
+      tmpArray[taskIndex] = editableTask;
+      setTaskArray(tmpArray);
+    } else {
+      alert("You must be signed it to do that!")
+    }
 
-
-    this.setState({
-      taskArray: tmpArray,
-    })
   }
 
-  resetEditStates = (tmpArray) => {
+  const resetEditStates = (tmpArray) => {
     return tmpArray.map((task) => {
       console.log(task);
       return {
@@ -95,50 +239,104 @@ class App extends Component {
     })
   }
 
-  findIndex = (id) => {
-    return this.state.taskArray.findIndex((task) => task.id === id);
+  const findIndex = (id) => {
+    return taskArray.findIndex((task) => task.id === id);
   }
 
-  findTask = (id) => {
-    return this.state.taskArray.find(task => task.id === id);
+  const findTask = (id) => {
+    return taskArray.find(task => task.id === id);
   }
 
-  addEditedTask = (e) => {
-    console.log(e.target);
+  const addEditedTask = async (e) => {
+    
+    if (isUserSignedIn()) {
 
-    const editedTaskId = e.target.parentNode.getAttribute("data-task-id");
-    let tmpArray = [].concat(this.state.taskArray);
+      console.log(e.target);
 
+      const editedTaskId = e.target.parentNode.getAttribute("data-task-id");
 
+      const editedTaskRef = doc(getFirestore(), userId, editedTaskId);
+      let tmpArray = [].concat(taskArray);
+      const taskToEdit = findTask(editedTaskId);
+      const taskIndex = findIndex(editedTaskId);
+      const editedTask = {...taskToEdit, text: editInput, editState: false};
+      tmpArray[taskIndex] = editedTask;
+      // tmpArray = resetEditStates(tmpArray);
+      setTaskArray(tmpArray);
+      // loadDBTasks();
+      setEditInput("");
+      await setDoc(editedTaskRef, { text: editInput }, { merge: true });
+    } else {
+      alert("You must be signed it to do that!")
+    }
+  }
 
-    const taskToEdit = this.findTask(editedTaskId);
-    const taskIndex = this.findIndex(editedTaskId);
+  const loadDBTasks =  async (userId) => {
+    // console.log("loadDBTasks Called");
+    // Create query to load tasks and listen for new ones
+    console.log(userId);
+    const allTasksQuery = query(collection(getFirestore(), userId), orderBy('timestamp', 'desc'));
 
-    const editedTask = {...taskToEdit, text: this.state.editInput};
-
-    tmpArray[taskIndex] = editedTask;
-    tmpArray = this.resetEditStates(tmpArray);
-
-    this.setState({
-      taskArray: tmpArray,
-      editInput: "",
+    // get all tasks from db
+    const dbTasks = await getDocs(allTasksQuery);
+    // console.log(dbTasks);
+    const tasks = dbTasks.docs.map( doc => doc.data());
+    // console.log(tasks);
+    // create new array and push tasks from db to it
+    let tmpArray = [];
+    tasks.forEach((task) => {
+      // console.log(task);
+      tmpArray.push({ text: task.text, id: task.id, editState: false });
     })
-  }
+    // console.log(tmpArray);
+    setTaskArray(tmpArray);
+    setUserId(userId);
+  };
 
-  render() {
-    return (
-      <div className="App">
-        <form action="submit" onSubmit={ this.addTask } style={{ display: "flex"}}>
-          <input type="text" id='taskInput' onChange={ this.handleNameChange } value={ this.state.taskInput.text } placeholder="Enter task here..."></input>
-          <button type='submit' style={{ border: "none", background: "none", padding: 0, zIndex: 2}} ><i className="fa-solid fa-square-plus fa-2x" /></button>
-        </form>
-        <Overview tasks={ this.state.taskArray } deleteTask={ this.deleteClickedTask } setTaskEdit={ this.makeTaskEditable } addEditedTask={ this.addEditedTask } handleEditChange={ this.handleEditChange }/>
-        <h2>Total Tasks</h2>
-        <p>{ this.state.tasksTotal }</p>
-      </div>
-    );
-  }
+
+  return (
+    <div className="App">
+      <nav>
+        <div id='userContainer'>
+          <div hidden id='userPic'></div>
+          <div hidden id='userName'></div>
+          <button hidden id='signOut' onClick={ signOutUser } >Sign Out</button>
+          <button id='signIn' onClick={ signIn }> <i className='materialIcons'>account_circle</i>Sign-in with Google</button>
+        </div>
+      </nav>
+      <form action="submit" onSubmit={ addTask } style={{ display: "flex"}}>
+        <input 
+          type="text" 
+          id='taskInput' 
+          onChange={ handleNameChange } 
+          value={ taskInput.text } 
+          placeholder="Enter task here..." 
+        />
+        <button 
+          type='submit' 
+          style={{ border: "none", background: "none", padding: 0, zIndex: 2}} >
+            <i className="fa-solid fa-square-plus fa-2x" />
+        </button>
+      </form>
+      <Overview 
+        tasks={ taskArray } 
+        deleteTask={ deleteClickedTask } 
+        setTaskEdit={ makeTaskEditable } 
+        addEditedTask={ addEditedTask } 
+        handleEditChange={ handleEditChange }
+      />
+      <h2>Total Tasks</h2>
+      <p>{ taskArray.length }</p>
+    </div>
+  );
+
 
 }
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// const db = getFirestore(app);
+
+getPerformance();
 
 export default App;
