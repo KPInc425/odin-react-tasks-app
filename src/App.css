@@ -1,8 +1,18 @@
 #userContainer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
 }
+
+#userName {
+    background-color: rgb(0, 0, 0);
+    color: transparent;
+    text-shadow: 2px 2px 2px rgb(0, 255, 21);
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+         background-clip: text;
+}
+
 
 #userPic {
     position: relative;
@@ -12,8 +22,107 @@
     background-repeat: no-repeat;
     background-size: 40px;
     border-radius: 20px;
+    /* margin: 0 5px; */
+}
+
+.hidden {
+    display: none !important;
+    visibility: collapse;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+#signIn, #signOut {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border: 2px outset rgb(0, 173, 14);
+    background: rgba(0, 0, 0, 0.151);
+    color: white;
+}
+
+#signIn:hover, #signIn:hover i, #signOut:hover {
+    background-color: rgb(0, 255, 21);
+    color: black
 }
 
 #userName {
     padding: 0 10px;
+}
+
+form {
+    margin: 20px auto;
+    /* width: 50vw; */
+    display: flex;
+    justify-content: center;
+}
+
+form button {
+    margin-left: 8px;
+    color: rgb(0, 173, 14);
+}
+
+form button:hover {
+    color:rgb(0, 255, 21);
+    text-shadow: 3px 3px 3px rgb(0, 247, 255);
+}
+
+form button:active {
+    color: black;
+    text-shadow: none;
+}
+
+form input {
+    background-color: rgba(255, 255, 255, 0.527);
+    border-radius: 8px;
+}
+
+form input:focus {
+    outline: 2px solid rgb(0, 247, 255);
+    background-color: white;
+}
+
+html {
+    background-color: rgba(8, 27, 11, 0.849);
+    color: white;
+}
+
+i {
+    color: rgb(0, 173, 14);
+    margin-right: 5px;
+}
+
+.totalTasksContainer {
+    width: 25%;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.taskList {
+    display: grid;
+    justify-content: center;
+}
+
+.taskList button {
+    color: rgb(0, 173, 14);
+}
+
+@media screen and (max-width: 400px) {
+    #userContainer {
+        display: grid;
+        justify-content: center;
+    }
+
+    #signOut {
+        text-align: center;
+        justify-content: center;
+    }
+
+    #userPic {
+        margin: 0 auto;
+        width: 56px;
+        height: 56px;
+        background-size: 56px;
+        border-radius: 56px;
+    }
 }

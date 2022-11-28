@@ -77,15 +77,15 @@ const authStateObserver = (user) => {
 
     userPicElement.style.backgroundImage = 
       'url(' + addSizeToGoogleProfilePic(profilePicUrl) + ')';
-    userNameElement.textContent = userName;
+    userNameElement.textContent = `${userName}'s Task List`;
 
     // Show user's profile and sign-out button 
-    userNameElement.removeAttribute('hidden');
-    userPicElement.removeAttribute('hidden');
-    signOutButtonElement.removeAttribute('hidden');
+    userNameElement.classList.remove('hidden');
+    userPicElement.classList.remove('hidden');
+    signOutButtonElement.classList.remove('hidden');
 
     // Hide sign-in button 
-    signInButtonElement.setAttribute('hidden', 'true');
+    signInButtonElement.classList.add('hidden');
     console.log(user.uid);
     setUserId(user.uid);
 
@@ -95,15 +95,15 @@ const authStateObserver = (user) => {
   } else {
     // user is signed out!
     // Hide user's profile and sign-out button
-    userNameElement.setAttribute('hidden', 'true');
+    userNameElement.classList.add('hidden');
     console.log(userPicElement);
-    userPicElement.setAttribute('hidden', 'true');
+    userPicElement.classList.add('hidden');
     userPicElement.removeAttribute('style');
-    signOutButtonElement.setAttribute('hidden', 'true');
+    signOutButtonElement.classList.add('hidden');
 
     // Show sign-in button
 
-    signInButtonElement.removeAttribute('hidden');
+    signInButtonElement.classList.remove('hidden');
 
     // Removes all tasks from view
     setTaskArray([]);
@@ -298,10 +298,10 @@ function addSizeToGoogleProfilePic(url) {
     <div className="App">
       <nav>
         <div id='userContainer'>
-          <div hidden id='userPic'></div>
-          <div hidden id='userName'></div>
-          <button hidden id='signOut' onClick={ signOutUser } >Sign Out</button>
-          <button id='signIn' onClick={ signIn }> <i className='materialIcons'>account_circle</i>Sign-in with Google</button>
+          <div id='userPic' className='hidden'></div>
+          <h1 id='userName' className='hidden'></h1>
+          <button id='signOut' className='hidden' onClick={ signOutUser } >Sign Out</button>
+          <button id='signIn' onClick={ signIn }> <i className='material-icons'>account_circle</i>Sign-in with Google</button>
         </div>
       </nav>
       <form action="submit" onSubmit={ addTask } style={{ display: "flex"}}>
@@ -314,8 +314,9 @@ function addSizeToGoogleProfilePic(url) {
         />
         <button 
           type='submit' 
-          style={{ border: "none", background: "none", padding: 0, zIndex: 2}} >
-            <i className="fa-solid fa-square-plus fa-2x" />
+          style={{ border: "none", background: "none", padding: 0, zIndex: 2}} 
+          className="material-icons">
+              add_task
         </button>
       </form>
       <Overview 
@@ -325,8 +326,11 @@ function addSizeToGoogleProfilePic(url) {
         addEditedTask={ addEditedTask } 
         handleEditChange={ handleEditChange }
       />
-      <h2>Total Tasks</h2>
-      <p>{ taskArray.length }</p>
+      <div className='totalTasksContainer'>
+        <h2>Total Tasks</h2>
+        <p>{ taskArray.length }</p>
+      </div>
+
     </div>
   );
 

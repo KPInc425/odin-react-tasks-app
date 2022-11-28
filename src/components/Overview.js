@@ -2,7 +2,7 @@ import React from "react";
 
 function Overview({ tasks, deleteTask, setTaskEdit, addEditedTask, handleEditChange}) {
     return (
-        <div>
+        <div className="taskList">
             { 
             tasks.map((task, index) => {
                 return (
@@ -22,13 +22,17 @@ function Overview({ tasks, deleteTask, setTaskEdit, addEditedTask, handleEditCha
                             ? 
                             <button onClick={ addEditedTask } style={{ border: "none", background: "none", paddingLeft: 5, zIndex: 2}} className="fa-solid fa-square-plus"> </button> 
                             :
-                            <button onClick={ setTaskEdit } style={{ border: "none", background: "none", paddingLeft: 5, zIndex: 2}} className="fa-solid fa-pen-to-square"> </button>
+                            <button onClick={ setTaskEdit } style={{ border: "none", background: "none", paddingLeft: 5, zIndex: 2}} className="material-icons" >
+                                edit
+                            </button>
                         }
                         { task.editState 
                             ? 
                             <button onClick={ setTaskEdit } style={{ border: "none", background: "none", padding: 0, zIndex: 2}} className="fa-regular fa-rectangle-xmark"> </button>
                             :
-                            <button onClick={ deleteTask } style={{ border: "none", background: "none", padding: 0, zIndex: 2}} className="fa-solid fa-trash-can"> </button>
+                            <button onClick={ deleteTask } style={{ border: "none", background: "none", padding: 0, zIndex: 2}} className="material-icons" >
+                                delete
+                             </button>
                         }
 
                         
